@@ -57,6 +57,23 @@ function normalize(provider, mode, query, data) {
     })).filter(item => item.url || item.excerpt);
     return { provider, mode, query, answer: data.answer || data.output?.content || null, results, images: data.images || [], requestId: data.requestId || data.request_id || null };
 }
+async function tavilyUsage() {
+    const response = await fetch(`${trimUrl(settings().tavilyUrl)}/usage`, {
+        method: 'GET', headers: { Authorization: `Bearer ${settings().tavilyApiKey}` },
+    });
+    const text = await response.text();
+    const data = parseResponse(response, text);
+    if (!response.ok) throw new Error(`${response.status}: ${data?.detail?.error || data?.detail || data?.message || response.statusText}`);
+    if (!data?.key || typeof data.key.usage !== 'number' || typeof data.key.limit !== 'number') throw new Error('Expected Tavily usage response with key usage and limit');
+    return data;
+}
+async function exaRelayHealth() {
+    const relay = trimUrl(settings().relayUrl);
+    if (!relay) throw new Error('Exa requires a Web Research relay in browser mode');
+    const health = await request(`${relay}/health`, { method: 'GET', headers: {} }, 10000);
+    if (health.service !== 'web-research-relay' || health.status !== 'ok' || !Array.isArray(health.routes) || !health.routes.includes('/exa/search')) throw new Error('Relay responded, but it is not a compatible Web Research relay');
+    return health;
+}
 async function tavilySearch(query, mode = 'quick', options = {}) {
     const body = { query, search_depth: mode === 'deep' ? 'advanced' : 'basic', max_results: options.maxResults || settings().maxResults, include_answer: true, include_raw_content: Boolean(settings().includeRawContent) };
     return normalize('tavily', mode, query, await request(`${trimUrl(settings().tavilyUrl)}/search`, { method: 'POST', headers: { Authorization: `Bearer ${settings().tavilyApiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }));
@@ -113,25 +130,15 @@ async function testProvider(provider) {
     try {
         if (provider === 'tavily') {
             if (!trimUrl(settings().tavilyUrl) || !settings().tavilyApiKey) throw new Error('Tavily API URL and API key are required');
-            const data = await tavilySearch('Jujutsu Kaisen synopsis', 'quick', { maxResults: 1 });
-            if (data.provider !== 'tavily' || !Array.isArray(data.results) || !data.results.length) throw new Error('Tavily returned no usable search results');
-            output.text(`Tavily OK: real search returned ${data.results.length} result(s)`);
+            const usage = await tavilyUsage();
+            output.text(`Tavily OK: authenticated usage endpoint (key ${usage.key.usage}/${usage.key.limit})`);
             return;
         }
         if (!settings().exaApiKey) throw new Error('Exa API key is required');
         const configuredExa = trimUrl(settings().exaUrl);
-        if (!configuredExa) throw new Error('Exa API URL is required');
-        const relay = trimUrl(settings().relayUrl);
-        if (relay) {
-            // The supplied relay is intentionally pinned to Exa's official API.
-            // Do not report green if the separate Exa URL is misleading.
-            if (!/^https:\/\/api\.exa\.ai(?:\/|$)/i.test(configuredExa)) throw new Error('Relay mode requires Exa API URL to be https://api.exa.ai; set the relay only in Web Research relay URL');
-            const health = await request(`${relay}/health`, { method: 'GET', headers: {} }, 10000);
-            if (health.service !== 'web-research-relay' || health.status !== 'ok' || !Array.isArray(health.routes) || !health.routes.includes('/exa/search')) throw new Error('Relay responded, but it is not a compatible Web Research relay');
-        }
-        const data = await exaSearch('Jujutsu Kaisen powers and limitations', 'deep', { maxResults: 1 });
-        if (data.provider !== 'exa' || !Array.isArray(data.results) || !data.results.length || !data.requestId) throw new Error('Expected an Exa search response with results and request ID');
-        output.text(`Exa OK: verified ${relay ? 'Web Research relay + ' : ''}Exa search (${data.results.length} result(s))`);
+        if (!/^https:\/\/api\.exa\.ai(?:\/|$)/i.test(configuredExa)) throw new Error('Exa API URL must be https://api.exa.ai; configure the proxy only in Web Research relay URL');
+        await exaRelayHealth();
+        output.text('Exa relay OK: compatible relay is live. Exa does not expose a credit-free credential validation endpoint for ordinary search keys.');
     } catch (error) { output.text(`${provider} failed: ${error.message}`); }
 }
 function bindSettings() {

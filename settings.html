@@ -19,7 +19,7 @@
     <small id="web_research_exa_status"></small>
     <label>Web Research relay URL (optional; use only for a compatible Web Research relay)</label>
     <input id="web_research_relay_url" class="text_pole" type="text" placeholder="http://100.64.0.1:6780">
-    <small>When this is set, Exa API URL must remain <code>https://api.exa.ai</code>. The test verifies the relay identity, its Exa route, and an actual Exa search.</small>
+    <small>Test Tavily authenticates against Tavily's credit-free <code>/usage</code> endpoint. Test Exa verifies the configured official Exa URL and relay identity/routes without spending search credits; Exa does not offer a credit-free validation endpoint for ordinary API keys.</small>
     <hr>
     <label>Default research mode</label>
     <select id="web_research_default_mode" class="text_pole">
