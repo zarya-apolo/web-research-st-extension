@@ -1,0 +1,22 @@
+[Unit]
+Description=Web Research CORS relay for SillyTavern
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zarya
+WorkingDirectory=/home/zarya/services/web-research-relay
+Environment=WEB_RESEARCH_BIND=100.64.0.1
+Environment=WEB_RESEARCH_PORT=6780
+ExecStart=/usr/bin/python3 /home/zarya/services/web-research-relay/server.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/zarya/services/web-research-relay
+
+[Install]
+WantedBy=multi-user.target

@@ -29,11 +29,18 @@ Configure all values from the Web Research extension settings in SillyTavern:
 
 - Tavily API URL and API key
 - Exa API URL and API key
+- Web Research relay URL (required for browser calls to Exa because Exa does not allow CORS)
 - default mode
 - maximum result count
 
 The keys are local ST extension settings and are not included in this repository.
-Both API URLs are configurable; neither provider is hardcoded as the only backend.
+Both provider URLs and the optional relay URL are configurable.
+
+## Optional VPN relay
+
+`server.py` is a zero-dependency CORS relay intended to run on the user's own server. It binds to a configured VPN address and accepts only four fixed upstream routes: Exa Search, Exa Answer, Tavily Crawl and Tavily Research. It does not persist credentials. `web-research-relay.service` is a systemd unit template; update its bind address and installation path before enabling it.
+
+When using the relay, configure its URL in ST. The extension sends the provider key per request using a relay-specific header, and the relay forwards it only to its fixed official provider endpoint.
 
 Install from the public GitHub URL:
 
