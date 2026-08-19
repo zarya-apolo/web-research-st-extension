@@ -81,7 +81,14 @@ async function tavilySearch(query, mode = 'quick', options = {}) {
 async function exaSearch(query, mode = 'deep', options = {}) {
     const type = options.searchType || (mode === 'quick' ? 'fast' : 'deep');
     const body = { query, type, numResults: options.maxResults || settings().maxResults, contents: { highlights: true } };
-    if (mode === 'deep') body.contents = { highlights: true, summary: true };
+    if (mode === 'deep') {
+        body.contents = { highlights: true, summary: { query } };
+        body.systemPrompt = 'Synthesize a direct, detailed answer to the query from the retrieved sources. Clearly distinguish established facts, disputed claims, and missing evidence. Do not invent facts.';
+        body.outputSchema = {
+            type: 'text',
+            description: 'A self-contained answer to the query grounded in the retrieved sources, including relevant caveats and limitations.',
+        };
+    }
     const url = exaEndpoint('search');
     const headers = exaUsesRelay() ? { 'X-Exa-Key': settings().exaApiKey, 'Content-Type': 'application/json' } : { 'x-api-key': settings().exaApiKey, 'Content-Type': 'application/json' };
     return normalize('exa', mode, query, await request(url, { method: 'POST', headers, body: JSON.stringify(body) }, type.startsWith('deep') ? 120000 : 60000));
