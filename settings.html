@@ -1,0 +1,35 @@
+<div id="web_research_settings" class="inline-drawer">
+  <div class="inline-drawer-toggle inline-drawer-header"><b>Web Research</b><div class="status_text">off</div><div class="inline-drawer-icon fa-solid fa-circle-chevron-down"></div></div>
+  <div class="inline-drawer-content">
+    <label class="checkbox_label"><input id="web_research_enabled" type="checkbox"> Enabled</label>
+    <small>Normalized web research tools for quick Tavily lookup and semantic/deep Exa research.</small>
+    <hr>
+    <label>Tavily API URL</label>
+    <input id="web_research_tavily_url" class="text_pole" type="text" placeholder="https://api.tavily.com">
+    <label>Tavily API key</label>
+    <input id="web_research_tavily_key" class="text_pole" type="password" placeholder="Configured locally in ST">
+    <button id="web_research_test_tavily" class="menu_button">Test Tavily</button>
+    <small id="web_research_tavily_status"></small>
+    <hr>
+    <label>Exa API URL</label>
+    <input id="web_research_exa_url" class="text_pole" type="text" placeholder="https://api.exa.ai">
+    <label>Exa API key</label>
+    <input id="web_research_exa_key" class="text_pole" type="password" placeholder="Configured locally in ST">
+    <button id="web_research_test_exa" class="menu_button">Test Exa</button>
+    <small id="web_research_exa_status"></small>
+    <hr>
+    <label>Default research mode</label>
+    <select id="web_research_default_mode" class="text_pole">
+      <option value="auto">Auto</option><option value="quick">Quick / Tavily</option><option value="deep">Deep / Exa</option><option value="answer">Answer / Exa</option>
+    </select>
+    <label>Maximum results</label>
+    <input id="web_research_max_results" class="text_pole" type="number" min="1" max="10" step="1">
+    <div class="web_research_help">
+      <b>Tool differences</b><br>
+      <code>web_research_quick</code>: Tavily, fast wiki/synopsis/current lookup.<br>
+      <code>web_research_deep</code>: Exa, semantic fandom/lore/powers/limitations research.<br>
+      <code>web_research_answer</code>: Exa synthesized answer with citations.<br>
+      <code>web_research_auto</code>: normalized router using the selected mode.
+    </div>
+  </div>
+</div>

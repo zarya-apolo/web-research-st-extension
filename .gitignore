@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.p12
+*.sqlite*
+.DS_Store
