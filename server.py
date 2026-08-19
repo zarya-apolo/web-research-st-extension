@@ -15,6 +15,10 @@ MAX_BODY = 1_000_000
 ROUTES = {
     '/exa/search': ('https://api.exa.ai/search', 'x-exa-key', 'x-api-key'),
     '/exa/answer': ('https://api.exa.ai/answer', 'x-exa-key', 'x-api-key'),
+    # Compatibility aliases for extensions configured with the relay as their
+    # Exa API URL before the explicit relay setting existed.
+    '/search': ('https://api.exa.ai/search', 'x-api-key', 'x-api-key'),
+    '/answer': ('https://api.exa.ai/answer', 'x-api-key', 'x-api-key'),
     '/tavily/crawl': ('https://api.tavily.com/crawl', 'x-tavily-key', 'Authorization'),
     '/tavily/research': ('https://api.tavily.com/research', 'x-tavily-key', 'Authorization'),
 }
@@ -24,7 +28,7 @@ class Handler(BaseHTTPRequestHandler):
     def cors(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS, GET')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, X-Exa-Key, X-Tavily-Key')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, X-Exa-Key, X-Tavily-Key, X-Api-Key')
         self.send_header('Access-Control-Max-Age', '600')
     def send_json(self, status, data):
         payload = json.dumps(data, ensure_ascii=False).encode()

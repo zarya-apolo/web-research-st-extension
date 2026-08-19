@@ -20,6 +20,18 @@ function settings() {
     return extension_settings[MODULE];
 }
 function trimUrl(value) { return String(value || '').replace(/\/+$/, ''); }
+function exaUsesRelay() {
+    const base = trimUrl(settings().exaUrl);
+    return Boolean(settings().relayUrl) || (base && !/^https:\/\/api\.exa\.ai(?:\/|$)/i.test(base));
+}
+function exaEndpoint(operation) {
+    const explicitRelay = trimUrl(settings().relayUrl);
+    if (explicitRelay) return `${explicitRelay}/exa/${operation}`;
+    const base = trimUrl(settings().exaUrl);
+    // A non-official Exa URL is a Web Research relay. This keeps one-field
+    // configuration working and prevents callers from accidentally using /search.
+    return exaUsesRelay() ? `${base}/exa/${operation}` : `${base}/${operation}`;
+}
 function enabled() { return settings().enabled; }
 function parseResponse(response, text) {
     try { return text ? JSON.parse(text) : {}; }
@@ -53,13 +65,13 @@ async function exaSearch(query, mode = 'deep', options = {}) {
     const type = options.searchType || (mode === 'quick' ? 'fast' : 'deep');
     const body = { query, type, numResults: options.maxResults || settings().maxResults, contents: { highlights: true } };
     if (mode === 'deep') body.contents = { highlights: true, summary: true };
-    const url = settings().relayUrl ? `${trimUrl(settings().relayUrl)}/exa/search` : `${trimUrl(settings().exaUrl)}/search`;
-    const headers = settings().relayUrl ? { 'X-Exa-Key': settings().exaApiKey, 'Content-Type': 'application/json' } : { 'x-api-key': settings().exaApiKey, 'Content-Type': 'application/json' };
+    const url = exaEndpoint('search');
+    const headers = exaUsesRelay() ? { 'X-Exa-Key': settings().exaApiKey, 'Content-Type': 'application/json' } : { 'x-api-key': settings().exaApiKey, 'Content-Type': 'application/json' };
     return normalize('exa', mode, query, await request(url, { method: 'POST', headers, body: JSON.stringify(body) }, type.startsWith('deep') ? 120000 : 60000));
 }
 async function exaAnswer(query) {
-    const url = settings().relayUrl ? `${trimUrl(settings().relayUrl)}/exa/answer` : `${trimUrl(settings().exaUrl)}/answer`;
-    const headers = settings().relayUrl ? { 'X-Exa-Key': settings().exaApiKey, 'Content-Type': 'application/json' } : { 'x-api-key': settings().exaApiKey, 'Content-Type': 'application/json' };
+    const url = exaEndpoint('answer');
+    const headers = exaUsesRelay() ? { 'X-Exa-Key': settings().exaApiKey, 'Content-Type': 'application/json' } : { 'x-api-key': settings().exaApiKey, 'Content-Type': 'application/json' };
     const data = await request(url, { method: 'POST', headers, body: JSON.stringify({ query, text: true }) }, 120000);
     return normalize('exa', 'answer', query, data);
 }
