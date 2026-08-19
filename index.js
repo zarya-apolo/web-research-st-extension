@@ -108,10 +108,31 @@ function registerTools() {
 }
 function save() { saveSettingsDebounced(); registerTools(); }
 async function testProvider(provider) {
-    const key = provider === 'tavily' ? settings().tavilyApiKey : settings().exaApiKey;
     const output = $(`#web_research_${provider}_status`);
-    output.text('Testing...');
-    try { const data = provider === 'tavily' ? await tavilySearch('Jujutsu Kaisen synopsis', 'quick', { maxResults: 1 }) : await exaSearch('Jujutsu Kaisen powers and limitations', 'deep', { maxResults: 1 }); output.text(`${provider} OK: ${data.results.length} result(s)`); } catch (error) { output.text(`${provider} failed: ${error.message}`); }
+    output.text(`Testing ${provider} configuration...`);
+    try {
+        if (provider === 'tavily') {
+            if (!trimUrl(settings().tavilyUrl) || !settings().tavilyApiKey) throw new Error('Tavily API URL and API key are required');
+            const data = await tavilySearch('Jujutsu Kaisen synopsis', 'quick', { maxResults: 1 });
+            if (data.provider !== 'tavily' || !Array.isArray(data.results) || !data.results.length) throw new Error('Tavily returned no usable search results');
+            output.text(`Tavily OK: real search returned ${data.results.length} result(s)`);
+            return;
+        }
+        if (!settings().exaApiKey) throw new Error('Exa API key is required');
+        const configuredExa = trimUrl(settings().exaUrl);
+        if (!configuredExa) throw new Error('Exa API URL is required');
+        const relay = trimUrl(settings().relayUrl);
+        if (relay) {
+            // The supplied relay is intentionally pinned to Exa's official API.
+            // Do not report green if the separate Exa URL is misleading.
+            if (!/^https:\/\/api\.exa\.ai(?:\/|$)/i.test(configuredExa)) throw new Error('Relay mode requires Exa API URL to be https://api.exa.ai; set the relay only in Web Research relay URL');
+            const health = await request(`${relay}/health`, { method: 'GET', headers: {} }, 10000);
+            if (health.service !== 'web-research-relay' || health.status !== 'ok' || !Array.isArray(health.routes) || !health.routes.includes('/exa/search')) throw new Error('Relay responded, but it is not a compatible Web Research relay');
+        }
+        const data = await exaSearch('Jujutsu Kaisen powers and limitations', 'deep', { maxResults: 1 });
+        if (data.provider !== 'exa' || !Array.isArray(data.results) || !data.results.length || !data.requestId) throw new Error('Expected an Exa search response with results and request ID');
+        output.text(`Exa OK: verified ${relay ? 'Web Research relay + ' : ''}Exa search (${data.results.length} result(s))`);
+    } catch (error) { output.text(`${provider} failed: ${error.message}`); }
 }
 function bindSettings() {
     if ($('#web_research_settings').data('bound')) return;

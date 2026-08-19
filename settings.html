@@ -17,8 +17,9 @@
     <input id="web_research_exa_key" class="text_pole" type="password" placeholder="Configured locally in ST">
     <button id="web_research_test_exa" class="menu_button">Test Exa</button>
     <small id="web_research_exa_status"></small>
-    <label>Web Research relay URL (optional, required for Exa in browser)</label>
+    <label>Web Research relay URL (optional; use only for a compatible Web Research relay)</label>
     <input id="web_research_relay_url" class="text_pole" type="text" placeholder="http://100.64.0.1:6780">
+    <small>When this is set, Exa API URL must remain <code>https://api.exa.ai</code>. The test verifies the relay identity, its Exa route, and an actual Exa search.</small>
     <hr>
     <label>Default research mode</label>
     <select id="web_research_default_mode" class="text_pole">
